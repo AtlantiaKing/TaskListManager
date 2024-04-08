@@ -1,6 +1,7 @@
 ﻿
 using ClickableTransparentOverlay;
 using ImGuiNET;
+using Newtonsoft.Json;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -54,15 +55,19 @@ namespace TaskListManager
     public class TaskListController : IDisposable
     {
         private TaskListView _view;
+        private const string _fileName = "taskdata.json";
 
         public TaskListController()
         {
-            // TODO: Load from file
-            Dictionary<TaskType, List<string>> tasks = new()
-            {
-                { TaskType.Daily, new List<string>() },
-                { TaskType.Permanent, new List<string>() }
-            };
+            Dictionary<TaskType, List<string>> tasks;
+            if (File.Exists(_fileName))
+                tasks = JsonConvert.DeserializeObject<Dictionary<TaskType, List<string>>>(File.ReadAllText(_fileName));
+            else
+                tasks = new()
+                {
+                    { TaskType.Daily, new List<string>() },
+                    { TaskType.Permanent, new List<string>() }
+                };
 
             _view = new()
             {
@@ -89,16 +94,21 @@ namespace TaskListManager
 
         public void CreateTask(string taskName, TaskType taskType)
         {
-            // TODO: Save to file
-
             _view.Vm.Tasks[taskType].Add(taskName);
+            Save();
         }
 
         public void FinishTask(string taskName, TaskType taskType)
         {
-            // TODO: Save to file
-
             _view.Vm.Tasks[taskType].Remove(taskName);
+
+            if(taskType != TaskType.Daily)
+                Save();
+        }
+
+        private void Save()
+        {
+            File.WriteAllText(_fileName, JsonConvert.SerializeObject(_view.Vm.Tasks));
         }
     }
 
